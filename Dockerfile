@@ -2,6 +2,6 @@ FROM debian:stable-slim
 
 WORKDIR /app
 
-COPY ./server /app
+COPY ./server index.html /app
 
 CMD ["./server"]
