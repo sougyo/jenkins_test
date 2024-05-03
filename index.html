@@ -45,7 +45,10 @@ let GoViewer = function (gobanModel, gridSize, xOffset, yOffset, cb) {
 
   let boardSize = gobanModel.boardSize;
   let hgridSize = gridSize / 2;
-  let draw = SVG().addTo('#drawing').size(1000, 1000);
+  let draw = SVG()
+    .addTo('#drawing')
+    .size(gridSize * (boardSize + 1),
+          gridSize * (boardSize + 1));
 
   let svgCircles = new Array(boardSize);
   for (let i = 0; i < boardSize; i++)
@@ -71,8 +74,6 @@ let GoViewer = function (gobanModel, gridSize, xOffset, yOffset, cb) {
         svgCircles[i][j] = draw
           .circle(gridSize - 2)
           .move(i * gridSize - hgridSize + xOffset, j * gridSize - hgridSize + yOffset)
-          .stroke({ width: 0 })
-          .attr({ 'fill-opacity': 0.1 })
           .click(e => { cb(i, j) });
       }
     }
@@ -82,7 +83,11 @@ let GoViewer = function (gobanModel, gridSize, xOffset, yOffset, cb) {
     for (let i = 0; i < boardSize; i++) {
       for (let j = 0; j < boardSize; j++) {
         const x = gobanModel.board[i][j];
-        if (x == GobanModel.BLACK) {
+        if (x == GobanModel.NONE) {
+          svgCircles[i][j]
+            .stroke({ width: 0 })
+            .attr({'fill-opacity': 0.0 });
+        } else if (x == GobanModel.BLACK) {
           svgCircles[i][j]
             .fill('#000')
             .stroke({ color: '#000', width: 2 })
@@ -109,9 +114,11 @@ let GoViewer = function (gobanModel, gridSize, xOffset, yOffset, cb) {
     this.redraw();
   }
 }
+let cnt = 0;
 gobanModel = new GobanModel(19);
 goviewer = new GoViewer(gobanModel, 30, 20, 20, function(i, j) { 
-  gobanModel.setStone(i, j, GobanModel.WHITE);
+  cnt += 1;
+  gobanModel.setStone(i, j, cnt % 2 + 1);
 });
 </script>
 </body>
