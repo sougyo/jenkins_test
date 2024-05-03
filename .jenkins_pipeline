@@ -1,0 +1,75 @@
+pipeline {
+    agent {
+        kubernetes {
+            yaml '''
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: golang
+    image: golang:1.22
+    command:
+    - sleep
+    args:
+    - 99d
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:debug
+    command:
+    - sleep
+    args:
+    - 99d
+            '''
+        }
+    }
+    environment {
+        IMAGEPATH = '192.168.0.152:32000/goapp:latest'
+    }
+    stages {
+        stage('Get a project') {
+            steps {
+                container('golang') {
+                    git url: 'https://github.com/sougyo/jenkins_test', branch: 'main'
+                }
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                container('golang') {
+                    sh '''
+                    go build server.go
+                    '''
+                }
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                container('golang') {
+                    sh '''
+                    go test
+                    '''
+                }
+            }
+        }
+
+        stage('Build a container image') {
+            steps {
+                container('kaniko') {
+                    sh '''
+                    /kaniko/executor -f `pwd`/Dockerfile -c `pwd` --destination ${IMAGEPATH} --image-name-tag-with-digest-file digest.txt
+                    '''
+                }
+            }
+        }
+
+        stage('Save') {
+            steps {
+                container('golang') {
+                    archiveArtifacts artifacts: 'digest.txt'
+                }
+            }
+        }
+
+    }
+}
