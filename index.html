@@ -1,5 +1,118 @@
 <html>
+<head>
+<title>Goban</title>
+<script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
+</head>
 <body>
-index.html test
+<div id="drawing"></div>
+<script>
+
+class GobanModel {
+  static NONE  = 0;
+  static BLACK = 1;
+  static WHITE = 2;
+
+  constructor(boardSize) {
+    this.boardSize = boardSize;
+    this.board = new Array(boardSize);
+    this.listeners = [];
+    for (let i = 0; i < boardSize; i++) {
+      this.board[i] = new Array(boardSize);
+      for (let j = 0; j < boardSize; j++) {
+        this.board[i][j] = GobanModel.NONE;
+      }
+    }
+  }
+
+  setStone(i, j, stone) {
+    if (stone == GobanModel.BLACK ||
+        stone == GobanModel.WHITE ||
+        stone == GobanModel.NONE) {
+      this.board[i][j] = stone;
+      for (let listener of this.listeners) {
+        listener.notify();
+      }
+    }
+  }
+
+  addListener(listener) {
+    this.listeners.push(listener);
+  }
+}
+
+let GoViewer = function (gobanModel, gridSize, xOffset, yOffset, cb) {
+  gobanModel.addListener(this);
+
+  let boardSize = gobanModel.boardSize;
+  let hgridSize = gridSize / 2;
+  let draw = SVG().addTo('#drawing').size(1000, 1000);
+
+  let svgCircles = new Array(boardSize);
+  for (let i = 0; i < boardSize; i++)
+    svgCircles[i] = new Array(boardSize);
+
+  function initGrid() {
+    for (let i = 0; i < boardSize; i++) {
+      const x = (i + 1) * gridSize;
+      draw
+        .line(xOffset + i * gridSize, yOffset,
+              xOffset + i * gridSize, yOffset + (boardSize-1) * gridSize)
+        .stroke({ color: '#000', width: 1});
+      draw
+        .line(xOffset                           , yOffset + i * gridSize,
+              xOffset + (boardSize-1) * gridSize, yOffset + i * gridSize)
+        .stroke({ color: '#000', width: 1});
+    }
+  }
+
+  function initCircle() {
+    for (let i = 0; i < boardSize; i++) {
+      for (let j = 0; j < boardSize; j++) {
+        svgCircles[i][j] = draw
+          .circle(gridSize - 2)
+          .move(i * gridSize - hgridSize + xOffset, j * gridSize - hgridSize + yOffset)
+          .stroke({ width: 0 })
+          .attr({ 'fill-opacity': 0.1 })
+          .click(e => { cb(i, j) });
+      }
+    }
+  }
+
+  function colorCircle() {
+    for (let i = 0; i < boardSize; i++) {
+      for (let j = 0; j < boardSize; j++) {
+        const x = gobanModel.board[i][j];
+        if (x == GobanModel.BLACK) {
+          svgCircles[i][j]
+            .fill('#000')
+            .stroke({ color: '#000', width: 2 })
+            .attr({'fill-opacity': 1.0 });
+        } else if (x == GobanModel.WHITE) {
+          svgCircles[i][j]
+            .fill('#fff')
+            .stroke({ color: '#000', width: 2 })
+            .attr({'fill-opacity': 1.0 });
+        }
+      }
+    }
+  }
+
+  initGrid();
+  initCircle();
+
+  this.redraw = function() {
+    colorCircle();
+  }
+  this.redraw();
+
+  this.notify = function() {
+    this.redraw();
+  }
+}
+gobanModel = new GobanModel(19);
+goviewer = new GoViewer(gobanModel, 30, 20, 20, function(i, j) { 
+  gobanModel.setStone(i, j, GobanModel.WHITE);
+});
+</script>
 </body>
 </html>

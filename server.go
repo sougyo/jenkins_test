@@ -7,10 +7,6 @@ import (
 	"net/http"
 )
 
-func Add(a, b int) int {
-	return a + b
-}
-
 func main() {
 	filePath := "index.html"
 
@@ -20,7 +16,10 @@ func main() {
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, string(content))
+		_, err = w.Write(content)
+		if err != nil {
+			log.Fatalf("err writing response: %v", err)
+		}
 	})
 
 	fmt.Println("Server listening on port 8080")
