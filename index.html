@@ -114,12 +114,27 @@ let GoViewer = function (gobanModel, gridSize, xOffset, yOffset, cb) {
     this.redraw();
   }
 }
-let cnt = 0;
 gobanModel = new GobanModel(19);
-goviewer = new GoViewer(gobanModel, 30, 20, 20, function(i, j) { 
-  cnt += 1;
-  gobanModel.setStone(i, j, cnt % 2 + 1);
-});
+
+let cnt = 0;
+function clickEvent(i, j) {
+
+  var request = new XMLHttpRequest();
+  request.open('POST', '../move', true);
+  request.setRequestHeader('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
+  request.onload = function() {
+    if (request.status >= 200 && request.status < 300) {
+      var responseBody = request.responseText;
+      if (responseBody.includes("OK")) {
+        gobanModel.setStone(i, j, cnt % 2 + 1);
+        cnt += 1;
+      }
+    }
+  }
+  request.send(`MOVE ${i} ${j}`);
+}
+
+goviewer = new GoViewer(gobanModel, 30, 20, 20, clickEvent);
 </script>
 </body>
 </html>
