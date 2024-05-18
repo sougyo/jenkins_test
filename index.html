@@ -118,7 +118,6 @@ gobanModel = new GobanModel(19);
 
 let cnt = 0;
 function clickEvent(i, j) {
-
   var request = new XMLHttpRequest();
   request.open('POST', '../move', true);
   request.setRequestHeader('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
@@ -131,10 +130,23 @@ function clickEvent(i, j) {
       }
     }
   }
-  request.send(`MOVE ${i} ${j}`);
+  stone = (((cnt + 1) % 2) == 1) ? "BLACK" : "WHITE";
+  request.send(`MOVE ${stone} ${i} ${j}`);
 }
 
 goviewer = new GoViewer(gobanModel, 30, 20, 20, clickEvent);
+
+setInterval(() => {
+  var request = new XMLHttpRequest();
+  request.open('GET', '../board', true);
+  request.onload = function() {
+    if (request.status == 200) {
+      console.log(request.responseText);
+    }
+  };
+  request.send(null);
+}, 100);
+
 </script>
 </body>
 </html>
