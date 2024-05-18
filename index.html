@@ -16,23 +16,34 @@ class GobanModel {
     this.boardSize = boardSize;
     this.board = new Array(boardSize);
     this.listeners = [];
-    for (let i = 0; i < boardSize; i++) {
-      this.board[i] = new Array(boardSize);
-      for (let j = 0; j < boardSize; j++) {
+    this.clear();
+  }
+
+  clear() {
+    for (let i = 0; i < this.boardSize; i++) {
+      this.board[i] = new Array(this.boardSize);
+      for (let j = 0; j < this.boardSize; j++) {
         this.board[i][j] = GobanModel.NONE;
       }
     }
   }
 
-  setStone(i, j, stone) {
+  setStone(i, j, stone, notify) {
     if (stone == GobanModel.BLACK ||
         stone == GobanModel.WHITE ||
         stone == GobanModel.NONE) {
       this.board[i][j] = stone;
+   
+      if (notify) {
+        this.notify();
+      }
+    }
+  }
+
+  notify() {
       for (let listener of this.listeners) {
         listener.notify();
       }
-    }
   }
 
   addListener(listener) {
@@ -115,6 +126,30 @@ let GoViewer = function (gobanModel, gridSize, xOffset, yOffset, cb) {
   }
 }
 gobanModel = new GobanModel(19);
+prevText = ""
+function updateGoban(text, board) {
+  if (text == prevText) {
+    return;
+  }
+
+  const prevRows = prevText.split('\n').map(row => row.split(''));
+  const rows = text.split('\n').map(row => row.split(''));
+  for (let j = 0; j < rows.length; j++) {
+    for (let i = 0; i < rows[j].length; i++) {
+      if (prevRows[j] && prevRows[j][i] && rows[j][i] == prevRows[j][i]) {
+        continue;
+      }
+      const char = rows[j][i];
+      if (char == "B")
+        board.setStone(i, j, GobanModel.BLACK, false)
+      if (char == "W")
+        board.setStone(i, j, GobanModel.WHITE, false)
+    }
+  }
+  board.notify()
+
+  prevText = text;
+}
 
 let cnt = 0;
 function clickEvent(i, j) {
@@ -123,11 +158,8 @@ function clickEvent(i, j) {
   request.setRequestHeader('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
   request.onload = function() {
     if (request.status >= 200 && request.status < 300) {
-      var responseBody = request.responseText;
-      if (responseBody.includes("OK")) {
-        gobanModel.setStone(i, j, cnt % 2 + 1);
-        cnt += 1;
-      }
+      updateGoban(request.responseText, gobanModel);
+      cnt += 1;
     }
   }
   stone = (((cnt + 1) % 2) == 1) ? "BLACK" : "WHITE";
@@ -136,12 +168,13 @@ function clickEvent(i, j) {
 
 goviewer = new GoViewer(gobanModel, 30, 20, 20, clickEvent);
 
+
 setInterval(() => {
   var request = new XMLHttpRequest();
   request.open('GET', '../board', true);
   request.onload = function() {
     if (request.status == 200) {
-      console.log(request.responseText);
+      updateGoban(request.responseText, gobanModel);
     }
   };
   request.send(null);
